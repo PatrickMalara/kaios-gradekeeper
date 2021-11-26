@@ -1,91 +1,34 @@
 <template>
-  <div v-if="page === 'main'">
-    <Header title="Grade Keeper" />
-    <main style="margin: 46px 0px 56px 0px;">
-        <div class="buttons">
-            <button id="create-grade-btn" ref="create" :nav-selectable="true" > Create Grade </button>
-        </div>
-        <div class="inputs">
-            <input id="search-grades" type="text" placeholder="Search Courses" v-model="search_term" :nav-selectable="true" />
-        </div>
-        <div class="filter-buttons"> 
-            <div>
-                <button id="sort-grade-course-btn" ref="sort_course" :nav-selectable="true" > 
-                    <i v-if="sort_grade_course" width="16" height="16" fill="currentColor" class="bi bi-sort-alpha-down" viewBox="0 0 16 16"> </i>
-                    <i v-else width="16" height="16" fill="currentColor" class="bi bi-sort-alpha-up" viewBox="0 0 16 16"> </i>
-                </button>
-
-                <button id="sort-grade-mark-btn" ref="sort_mark" :nav-selectable="true" > 
-                    <i v-if="sort_grade_mark" width="16" height="16" fill="currentColor" class="bi bi-sort-numeric-up" viewBox="0 0 16 16"> </i>
-                    <i v-else width="16" height="16" fill="currentColor" class="bi bi-sort-numeric-down" viewBox="0 0 16 16"> </i>
-                </button>
-            </div>
-            <div> 
-                <button id="no-filter-btn" :nav-selectable="true" :class="{ 'selected-filter' : filter_applied === 0 }" > 
-                    <i width="16" height="16" fill="currentColor" class="bi bi-slash-circle" viewBox="0 0 16 16"> </i>
-                </button>
-                <button id="honors-filter-btn" :nav-selectable="true" :class="{ 'selected-filter' : filter_applied === 1 }"> 
-                    <i width="16" height="16" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16"> </i>
-                </button>
-
-                <button id="fails-filter-btn" :nav-selectable="true" :class="{ 'selected-filter' : filter_applied === 2 }"> 
-                    <i width="16" height="16" fill="currentColor" class="bi bi-hand-thumbs-down-fill" viewBox="0 0 16 16"> </i>
-                </button>
-            </div>
-        </div>
-        <div>
-            <div class="task" v-for="(grade) in filtered_grades" :key="grade.id" >
-                <span :data-grade_id="grade.id" :nav-selectable="true"> <span>{{ grade.course }}</span> <span>{{ grade.mark }}%</span> </span>
-            </div>
-        </div>
-    </main>
-    <footer class="footer-stats"> 
-        <p style="display: flex; justify-content: space-between;">
-            <small> 
-                Max: {{ filtered_grades.length === 0 ? 0 : Math.max( ...filtered_grades.map( (grade) => grade.mark ) ) }}
-            </small> 
-             <small> 
-                Mean: {{ filtered_grades.length === 0 ? 0 : (filtered_grades.reduce( (p, grade) => p + grade.mark, 0 ) / filtered_grades.length).toPrecision(4) }}
-            </small> 
-            <small> 
-                Min: {{ filtered_grades.length === 0 ? 0 : Math.min( ...filtered_grades.map( (grade) => grade.mark ) ) }} 
-            </small> 
-        </p>
-    </footer>
-    <SoftKeys :softkeys.sync="softkeys" />
-  </div>
-  <div v-else-if="page === 'creating'">
-    <Header title="Creating a Grade" />
-    <main style="margin: 46px 0px;">
-        <div class="inputs">
-            <input ref="course_name" :nav-selectable="true" :data-create_grade_input="true" type="text" placeholder="Course" v-model="input_grade_course" />
-            <input ref="course_grade" :nav-selectable="true" :data-create_grade_input="true" type="number" placeholder="50" v-model="input_grade_mark" min=0 max=100 />
-        </div>
-    </main>
-    <SoftKeys :softkeys.sync="softkeys" />
-  </div>
-  <div v-else-if="page === 'editing'">
-    <Header title="Editing a Grade" />
-    <main style="margin: 46px 0px;">
-        <div class="inputs">
-            <input ref="course_name" :nav-selectable="true" :data-edit_grade_input="true" type="text" placeholder="Course" v-model="input_grade_course" />
-            <input ref="course_grade" :nav-selectable="true" :data-edit_grade_input="true" type="number" placeholder="50" v-model="input_grade_mark" min=0 max=100 />
-        </div>
-    </main>
-    <SoftKeys :softkeys.sync="softkeys" />
-  </div>
+  <MainPage v-if="page === 'main'" 
+    :grades="grades" 
+    :softkeys="softkeys" 
+    :filter_applied="filter_applied"
+    :sort_grade_mark="sort_grade_mark"
+    :sort_grade_course="sort_grade_course" />
+  <EditingPage v-else-if="page === 'editing'" 
+    :softkeys="softkeys"
+    :grades="grades"
+    :editing_index="editing_grade_index"
+    @input_grade_course_update="(value) => { input_grade_course = value } " 
+    @input_grade_mark_update=" (value) => { input_grade_mark = value } " />
+  <CreatingPage v-else-if="page === 'creating'" 
+    :softkeys="softkeys"
+    @input_grade_course_update="(value) => { input_grade_course = value } " 
+    @input_grade_mark_update=" (value) => { input_grade_mark = value } " />
 </template>
 
 <script>
-import Header from './components/Header.vue'
-import SoftKeys from './components/SoftKeys.vue'
+import MainPage from './components/MainPage.vue'
+import EditingPage from './components/EditingPage.vue'
+import CreatingPage from './components/CreatingPage.vue'
 import Navigation from './Navigation.js'
 
 export default {
   name: 'App',
   components: {
-    Header,
-    SoftKeys
+    EditingPage,
+    CreatingPage,
+    MainPage
   },
   data: function() {
     return {
@@ -98,7 +41,6 @@ export default {
         },
 
         filter_applied: 0, // 0 = None, 1 = Honors, 2 = Fails
-        search_term: "",
         sort_grade_mark: undefined,
         sort_grade_course: true,
         editing_grade_index: -1,
@@ -108,71 +50,15 @@ export default {
         input_grade_mark: undefined, // Used for editing and creating pages
     };
   },
-  computed: {
-      filtered_grades: function() {
-
-            let the_grades = [...this.grades];
-
-
-            // Filter by Search Input
-            const regex = new RegExp( this.search_term, 'gi' );
-            the_grades = the_grades.filter( grade => regex.exec( grade.course ) );
-
-            // Filter by Honors || Fails 
-            if ( this.filter_applied === 1 ) {
-                the_grades = the_grades.filter( grade => grade.mark >= 80 );
-
-            } else if ( this.filter_applied === 2) {
-                the_grades = the_grades.filter( grade => grade.mark < 50 );
-            }
-
-
-            // Sorting By Course
-            if ( this.sort_grade_course !== undefined ) {
-                the_grades.sort( ( a, b ) => {
-                      if ( a.course < b.course ){
-                        return this.sort_grade_course ? -1 : 1;
-                      }
-                      if ( a.course > b.course ){
-                        return this.sort_grade_course ? 1 : -1;
-                      }
-                      return 0;
-                } );
-            }
-
-            // Sorting By Mark
-            if ( this.sort_grade_mark !== undefined ) {
-                the_grades.sort( ( a, b ) => {
-                      if ( a.mark < b.mark ){
-                        return this.sort_grade_mark ? -1 : 1;
-                      }
-                      if ( a.mark > b.mark ){
-                        return this.sort_grade_mark ? 1 : -1;
-                      }
-                      return 0;
-                } );
-            }
-
-            return the_grades;
-
-      }
-  },
   methods: {
-    create: function() {
-        console.log("Create a Grade");
-        const isFocused = this.$refs.create.getAttribute('nav-selected');
-        console.log( { isFocused } );
-        if ( isFocused == "true" ) {
-            console.log("Create is Focused");
-        }
-    },
     checkEnter: function() {
         const [currentElement] = Navigation.getCurrentItem();
 
         if ( currentElement.id === "create-grade-btn") {
-            const isFocused = this.$refs.create.getAttribute('nav-selected');
-            isFocused == "true" ? this.page = "creating" : "";
+            //const isFocused = this.$refs.create.getAttribute('nav-selected');
+            //isFocused == "true" ? this.page = "creating" : "";
         
+            this.page = "creating";
             setTimeout( function() {
                 Navigation.init(); // Because elements were removed, we need to reinitialze our array of elements we can navigate again
             }, 10 );
@@ -181,10 +67,10 @@ export default {
 
             // Input Validation
             if ( this.input_grade_mark == undefined  || this.input_grade_course.trim() == "" ) return;
-            if ( this.input_grade_mark > 100 || this.input_grade_mark < 0 ) return;
+            if ( this.input_grade_mark > 100 || this.input_grade_mark < 0 || isNaN(this.input_grade_mark) ) return;
 
             this.grades.push( {
-                "id": this.grades.length + 1,
+                "id": Date.now(),
                 "course": this.input_grade_course.trim(),
                 "mark": parseInt(this.input_grade_mark) 
             } );
@@ -198,6 +84,11 @@ export default {
             }, 10 );
 
         }  else if ( currentElement.dataset.edit_grade_input !== undefined ) {
+
+            // Input Validation
+            if ( this.input_grade_mark == undefined  || this.input_grade_course.trim() == "" ) return;
+            if ( this.input_grade_mark > 100 || this.input_grade_mark < 0 || isNaN(this.input_grade_mark) ) return;
+
 
             // This normally would'nt be okay due to Vue's Reactivity System; however, since our grades will be rerenderd
             // when we naviagate to the Main page, out updates will be rendered 
@@ -242,8 +133,7 @@ export default {
 
             this.grades.splice(grade_index, 1);
 
-            Navigation.Up(); // Theres a weird issue, this helps 
-            this.updateSoftkeys();
+            Navigation.init(); // Theres a weird issue, this helps 
         }
 
     },
@@ -252,16 +142,22 @@ export default {
         const [currentElement] = Navigation.getCurrentItem();
 
         if ( currentElement.dataset.grade_id !== undefined ) {
-            const grade_index = this.grades.indexOf( (grade) => grade.id == currentElement.dataset.grade_id );
+            //const grade_index = this.grades.indexOf( (grade) => grade.id == currentElement.dataset.grade_id );
+            // Idk why the code above doesnt work here... yet it works in checkRight()
+
+            let grade_index = -1;
+            for(let i = 0; i < this.grades.length; i++) {
+                if ( this.grades[i].id == currentElement.dataset.grade_id ) {
+                    grade_index = i;
+                    break;
+                }
+            }
+
             this.editing_grade_index = grade_index;
 
             this.page = "editing";
             const editSoftKeys = { left: "", center: "Save", right: "" };
             this.softkeys = editSoftKeys;
-
-            // Update the Editing Inputs to have the Selected Grade Values
-            this.input_grade_course = this.grades[ grade_index ].course;
-            this.input_grade_mark = this.grades[ grade_index ].mark;
 
             setTimeout( function() {
                 Navigation.init(); // Because elements were removed, we need to reinitialze our array of elements we can navigate again

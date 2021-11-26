@@ -1,9 +1,12 @@
 const init = () => {
-  const firstElement = getAllElements()[0];
+  const elements = getAllElements()
+  elements.forEach( el => el.setAttribute("nav-selected", false) );
+  const firstElement = elements[0];
   firstElement.setAttribute("nav-selected", "true");
   firstElement.setAttribute("nav-index", "0");
   firstElement.focus();
 };
+
 
 const getAllElements = () => document.querySelectorAll('[nav-selectable]');
 
