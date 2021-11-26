@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "name": "Grade Keeper",
+  "description": "Manage your course grades",
+  "type": "web",
+  "launch_path": "/index.html",
+  "icons": {
+    "56": "/assets/icons/kaios_56.png",
+    "112": "/assets/icons/kaios_112.png"
+  },
+  "developer": {
+    "name": "Patrick Malara",
+    "url": "https://www.patrickmalara.com"
+  },
+  "locales": {
+    "en-US": {
+      "name": "Grade Keeper",
+      "subtitle": "Manage your course grades",
+      "description": "Manage your course grades"
+    }
+  },
+  "default_locale": "en-US"
+}
